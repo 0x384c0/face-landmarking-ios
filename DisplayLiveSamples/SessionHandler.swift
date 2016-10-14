@@ -7,6 +7,7 @@
 //
 
 import AVFoundation
+import UIKit
 
 class SessionHandler : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureMetadataOutputObjectsDelegate {
     var session = AVCaptureSession()
@@ -22,13 +23,19 @@ class SessionHandler : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, A
         super.init()
     }
     
-    func openSession() {
+    func openSession() -> Bool {
         let device = AVCaptureDevice.devices(for: AVMediaType.video)
             .map { $0 }
             .filter { $0.position == .front}
             .first!
+    
+    if device == nil {
+        return false
+    }
         
         let input = try! AVCaptureDeviceInput(device: device)
+        
+        
         
         let output = AVCaptureVideoDataOutput()
         output.setSampleBufferDelegate(self, queue: sampleQueue)
@@ -49,7 +56,6 @@ class SessionHandler : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, A
         }
         
         session.commitConfiguration()
-        
         let settings: [AnyHashable: Any] = [kCVPixelBufferPixelFormatTypeKey as AnyHashable: Int(kCVPixelFormatType_32BGRA)]
         output.videoSettings = settings as! [String : Any]
     
@@ -60,11 +66,11 @@ class SessionHandler : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, A
         wrapper?.prepare()
         
         session.startRunning()
+        return true
     }
     
     // MARK: AVCaptureVideoDataOutputSampleBufferDelegate
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-
         if !currentMetadata.isEmpty {
             let boundsArray = currentMetadata
                 .flatMap { $0 as? AVMetadataFaceObject }
@@ -77,7 +83,6 @@ class SessionHandler : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, A
         }
 
         layer.enqueue(sampleBuffer)
-    }
     
     func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         print("DidDropSampleBuffer")

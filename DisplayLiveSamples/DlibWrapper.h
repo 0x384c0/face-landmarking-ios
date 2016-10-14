@@ -12,7 +12,8 @@
 @interface DlibWrapper : NSObject
 
 - (instancetype)init;
-- (void)doWorkOnSampleBuffer:(CMSampleBufferRef)sampleBuffer inRects:(NSArray<NSValue *> *)rects;
 - (void)prepare;
+- (void)doWorkOnSampleBuffer:(CMSampleBufferRef)sampleBuffer inRects:(NSArray<NSValue *> *)rects;
+- (void)drawFaceLandMarksOnImageBuffer:(CVImageBufferRef) imageBuffer;
 
 @end

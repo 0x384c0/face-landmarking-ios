@@ -11,12 +11,15 @@ import AVFoundation
 
 class ViewController: UIViewController {
     let sessionHandler = SessionHandler()
+    var layer: AVSampleBufferDisplayLayer?
+    var cameraFounded = false
     
+    @IBOutlet weak var noCamText: UILabel!
     @IBOutlet weak var preview: UIView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+        cameraFounded = sessionHandler.openSession()
     }
 
     override func didReceiveMemoryWarning() {
@@ -26,18 +29,16 @@ class ViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        
-        sessionHandler.openSession()
-        
-
-        let layer = sessionHandler.layer
-        layer.frame = preview.bounds
-
-        preview.layer.addSublayer(layer)
-        
-        view.layoutIfNeeded()
-
+        if cameraFounded{
+        if layer == nil{
+            layer = sessionHandler.layer
+            layer!.frame = preview.bounds
+            preview.layer.addSublayer(layer!)
+            view.layoutIfNeeded()
+            }
+        } else {
+            noCamText.hidden = false
+        }
     }
-
 }
 
