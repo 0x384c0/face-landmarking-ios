@@ -11,15 +11,15 @@ import UIKit
 class ImagesViewController: UIViewController {
     
     @IBOutlet weak var imageView: UIImageView!
-    @IBAction func back(sender: AnyObject) {
+    @IBAction func back(_ sender: AnyObject) {
         print("dismissViewControllerAnimated")
-        dismissViewControllerAnimated(true, completion: nil)
+        dismiss(animated: true, completion: nil)
     }
     override func viewDidLoad() {
-        loading(true)
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {[unowned self] in
-            self.wrapper.prepare()
-            self.loading(false)
+        loading(isLoading: true)
+        DispatchQueue.global(qos:.default).async {[unowned self] in
+            self.wrapper?.prepare()
+            self.loading(isLoading: false)
         }
         
     }
@@ -27,20 +27,21 @@ class ImagesViewController: UIViewController {
     
     let wrapper = DlibWrapper()
     
-    @IBAction func findFaces(sender: AnyObject) {
+    @IBAction func findFaces(_ sender: AnyObject) {
         
-        loading(true)
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {[unowned self] in
-            let
-            image = self.imageView.image!.CGImage,
-            size = self.imageView.image!.size
+        let
+        image = self.imageView.image!.cgImage,
+        size = self.imageView.image!.size
+        
+        loading(isLoading: true)
+        DispatchQueue.global(qos:.default).async {[unowned self] in
             
-            let imageBuffer: CVPixelBufferRef = Converters.pixelBufferFromCGImage(image!, withSize: size)!
-            self.wrapper.drawFaceLandMarksOnImageBuffer(imageBuffer)
+            let imageBuffer: CVPixelBuffer = Converters.pixelBufferFromCGImage(image: image!, withSize: size)!
+            self.wrapper?.drawFaceLandMarks(on: imageBuffer)
             
-            dispatch_async(dispatch_get_main_queue()) {[unowned self] in
-                self.imageView.image = Converters.UIImageFromPixelBuffer(imageBuffer)
-                self.loading(false)
+            DispatchQueue.main.async {[unowned self] in
+                self.imageView.image = Converters.UIImageFromPixelBuffer(imageBuffer: imageBuffer)
+                self.loading(isLoading: false)
             }
         }
         
@@ -49,11 +50,11 @@ class ImagesViewController: UIViewController {
     
     
     func loading(isLoading:Bool) {
-        dispatch_async(dispatch_get_main_queue()) {[unowned self] in
+        DispatchQueue.main.async {[unowned self] in
             if isLoading{
-                self.presentViewController(UIAlertController(title: "Processing...", message: nil, preferredStyle: .Alert), animated: true, completion: nil)
+                self.present(UIAlertController(title: "Processing...", message: nil, preferredStyle: .alert), animated: true, completion: nil)
             } else {
-                self.presentedViewController?.dismissViewControllerAnimated(true, completion: nil)
+                self.presentedViewController?.dismiss(animated: true, completion: nil)
             }
         }
     }

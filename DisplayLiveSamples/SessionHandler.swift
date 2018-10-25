@@ -24,12 +24,12 @@ class SessionHandler : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, A
     }
     
     func openSession() -> Bool {
-        let device = AVCaptureDevice.devices(for: AVMediaType.video)
+        let deviceMaybe = AVCaptureDevice.devices(for: .video)
             .map { $0 }
             .filter { $0.position == .front}
-            .first!
+            .first
     
-    if device == nil {
+    guard let device = deviceMaybe else {
         return false
     }
         
@@ -57,11 +57,11 @@ class SessionHandler : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, A
         
         session.commitConfiguration()
         let settings: [AnyHashable: Any] = [kCVPixelBufferPixelFormatTypeKey as AnyHashable: Int(kCVPixelFormatType_32BGRA)]
-        output.videoSettings = settings as! [String : Any]
+        output.videoSettings = settings as? [String : Any]
     
         // availableMetadataObjectTypes change when output is added to session.
         // before it is added, availableMetadataObjectTypes is empty
-        metaOutput.metadataObjectTypes = [AVMetadataObject.ObjectType.face]
+        metaOutput.metadataObjectTypes = [.face]
         
         wrapper?.prepare()
         
@@ -73,7 +73,7 @@ class SessionHandler : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, A
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         if !currentMetadata.isEmpty {
             let boundsArray = currentMetadata
-                .flatMap { $0 as? AVMetadataFaceObject }
+                .compactMap { $0 as? AVMetadataFaceObject }
                 .map { (faceObject) -> NSValue in
                     let convertedObject = output.transformedMetadataObject(for: faceObject, connection: connection)
                     return NSValue(cgRect: convertedObject!.bounds)
@@ -83,6 +83,7 @@ class SessionHandler : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, A
         }
 
         layer.enqueue(sampleBuffer)
+    }
     
     func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         print("DidDropSampleBuffer")

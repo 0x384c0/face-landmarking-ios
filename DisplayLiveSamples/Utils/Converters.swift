@@ -11,46 +11,50 @@ import UIKit
 class Converters {
     
     
-    static func pixelBufferFromCGImage(image:CGImageRef,withSize frameSize:CGSize) -> CVPixelBufferRef? {
+    static func pixelBufferFromCGImage(image:CGImage,withSize frameSize:CGSize) -> CVPixelBuffer? {
         let options = [
             "kCVPixelBufferCGImageCompatibilityKey": true,
             "kCVPixelBufferCGBitmapContextCompatibilityKey": true
         ]
         
-        let pixelBufferPointer = UnsafeMutablePointer<CVPixelBuffer?>.alloc(1)
+        var maybePixelBuffer:CVPixelBuffer?
         CVPixelBufferCreate(
             kCFAllocatorDefault,
             Int(frameSize.width),
             Int(frameSize.height),
             OSType(kCVPixelFormatType_32ARGB),
-            options,
-            pixelBufferPointer
+            options as CFDictionary,
+            &maybePixelBuffer
         )
         
-        CVPixelBufferLockBaseAddress(pixelBufferPointer.memory!, 0)
-        let pxData:UnsafeMutablePointer<(Void)> = CVPixelBufferGetBaseAddress(pixelBufferPointer.memory!)
+        guard let pixelBuffer = maybePixelBuffer else {
+            return nil
+        }
         
-        let rgbColorSpace:CGColorSpace = CGColorSpaceCreateDeviceRGB()!
+        CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+        let pxData = CVPixelBufferGetBaseAddress(pixelBuffer)
         
-        let context:CGContextRef = CGBitmapContextCreate(
-            pxData,
-            Int(frameSize.width),
-            Int(frameSize.height),
-            8,
-            4 * CGImageGetWidth(image),
-            rgbColorSpace,
-            CGImageAlphaInfo.NoneSkipFirst.rawValue
+        let rgbColorSpace:CGColorSpace = CGColorSpaceCreateDeviceRGB()
+        
+        let context:CGContext = CGContext(
+            data: pxData,
+            width: Int(frameSize.width),
+            height: Int(frameSize.height),
+            bitsPerComponent: 8,
+            bytesPerRow: 4 * image.width,
+            space: rgbColorSpace,
+            bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue
             )!
         
-        CGContextDrawImage(context, CGRectMake(0, 0, frameSize.width, frameSize.height), image)
-        CVPixelBufferUnlockBaseAddress(pixelBufferPointer.memory!, 0)
-        return pixelBufferPointer.memory!
+        context.draw(image, in: CGRect(x:0, y:0, width:frameSize.width, height:frameSize.height))
+        CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+        return pixelBuffer
     }
     
-    static func UIImageFromPixelBuffer(imageBuffer:CVPixelBufferRef) -> UIImage {
+    static func UIImageFromPixelBuffer(imageBuffer:CVPixelBuffer) -> UIImage {
         let
-        ciImage = CIImage(CVImageBuffer: imageBuffer),
-        uiImageOut = UIImage(CIImage: ciImage)
+        ciImage = CIImage(cvImageBuffer: imageBuffer),
+        uiImageOut = UIImage(ciImage: ciImage)
         return uiImageOut
     }
     

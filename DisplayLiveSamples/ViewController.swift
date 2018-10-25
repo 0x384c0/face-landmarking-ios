@@ -37,7 +37,7 @@ class ViewController: UIViewController {
             view.layoutIfNeeded()
             }
         } else {
-            noCamText.hidden = false
+            noCamText.isHidden = false
         }
     }
 }
